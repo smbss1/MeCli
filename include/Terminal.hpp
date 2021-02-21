@@ -121,7 +121,6 @@ namespace cli
                             const auto pos = static_cast<std::string::difference_type>(m_lPosition);
 
                             // clear the line
-                            // out << "\r\33[2K";
                             for (int i = 0; i < pos; ++i)
                                 out << "\b";
 
@@ -133,28 +132,25 @@ namespace cli
                             m_oLex.Process(m_strCurrentLine);
                             m_oLex.Begin();
                             bool bFound = false;
-                            for (auto& token : m_oLex.oTokenList)
+                            for (int i = 0; i < m_vCmds.size(); ++i)
                             {
-                                if (token.IsError())
-                                    continue;
-                                bFound = false;
-                                for (int i = 0; i < m_vCmds.size(); ++i)
+                                // If the first command is correct so highlight it
+                                if (m_vCmds[i].GetName() == m_oLex[0].GetText())
                                 {
-                                    // If found a command so highlight it
-                                    if (m_vCmds[i].GetName() == token.GetText())
-                                    {
-                                        bFound = true;
-                                        out << "\033[1;32m" << token.GetText() << "\033[0;0m" << std::flush;
-                                        break;
-                                    }
+                                    bFound = true;
+                                    out << "\033[1;32m" << m_oLex[0].GetText() << "\033[0;0m" << std::flush;
+                                    break;
                                 }
-                                if (bFound)
+                            }
+                            for (int i = 0; i < m_oLex.oTokenList.size(); ++i)
+                            {
+                                auto& oToken = m_oLex[i];
+                                if (oToken.IsError() || (bFound && i == 0))
                                     continue;
-                                out << token.GetText() << std::flush;
+                                out << oToken.GetText() << std::flush;
                             }
                             out << std::string(m_strCurrentLine.size() - m_lPosition, '\b') << std::flush;
                         }
-
                         break;
                     }
                     case KeyType::canc:
@@ -176,7 +172,6 @@ namespace cli
                     }
                     case KeyType::end:
                     {
-                        std::cout << "jjbjhb" << std::endl;
                         const auto pos = static_cast<std::string::difference_type>(m_lPosition);
 
                         out << std::string(m_strCurrentLine.begin() + pos, m_strCurrentLine.end()) << std::flush;

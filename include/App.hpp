@@ -30,7 +30,7 @@ namespace cli
             m_bExit = false;
             AddCmd("exit", [this]() { Exit(); });
         }
-        
+
         ~App() { }
 
         void Run()
@@ -101,7 +101,6 @@ namespace cli
                 }
                 case detail::Symbol::up:
                 {
-                    // auto line = terminal.GetLine();
                     terminal.SetLine(m_oHistory.Prev());
                     break;
                 }

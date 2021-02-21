@@ -4,7 +4,7 @@
 #define MECLI_HISTORY_STORAGE_HPP_
 
 #include <string>
-#include <vector>
+#include <deque>
 #include <iostream>
 #include <fstream>
 
@@ -16,6 +16,7 @@ public:
         Load("history.txt");
         Dump(std::cout);
         m_lCurrentLine = m_vHistory.size();
+        m_lMaxSize = 2;
     }
 
     ~History()
@@ -25,6 +26,8 @@ public:
 
     void Add(const std::string& strLine)
     {
+        if (m_vHistory.size() > m_lMaxSize)
+            m_vHistory.erase(m_vHistory.begin());
         if (m_vHistory.empty() || m_vHistory[m_vHistory.size() - 1] != strLine) // insert an element not equal to last one
             m_vHistory.push_back(strLine);
     }
@@ -76,6 +79,7 @@ private:
 private:
     std::vector<std::string> m_vHistory;
     std::size_t m_lCurrentLine;
+    std::size_t m_lMaxSize;
 };
 
 #endif

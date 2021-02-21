@@ -30,6 +30,7 @@ namespace cli
             m_bExit = false;
             AddCmd("exit", [this]() { Exit(); });
         }
+        
         ~App() { }
 
         void Run()

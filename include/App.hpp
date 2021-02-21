@@ -6,6 +6,7 @@
 #include "LinuxKeyboard.hpp"
 #include "InputDevice.hpp"
 #include "Terminal.hpp"
+#include "History.hpp"
 
 namespace cli
 {
@@ -21,7 +22,10 @@ namespace cli
             lex.Define("Identifier", "[A-Za-z_]+[0-9]*");
             lex.Define("Eof", "\\0");
 
-            m_oKeyboard.Register( [this](auto key){ this->Keypressed(key); } );
+            m_oKeyboard.Register([this](auto key)
+            {
+                this->Keypressed(key);
+            });
 
             m_bExit = false;
             AddCmd("exit", [this]() { Exit(); });
@@ -30,6 +34,7 @@ namespace cli
 
         void Run()
         {
+            Prompt();
             m_oScheduler.Run();
         }
 
@@ -55,7 +60,10 @@ namespace cli
         void Prompt()
         {
             if (!m_bExit)
-                std::cout << "> " << std::flush;
+            {
+                std::cout << style::bold << style::white;
+                std::cout << "> " << style::reset << std::flush;
+            }
         }
 
         void NewCommand(const std::pair<detail::Symbol, std::string>& s)
@@ -80,48 +88,22 @@ namespace cli
                             break;
                         }
                     }
+                    if (!s.second.empty())
+                        m_oHistory.Add(s.second);
                     Prompt();
                     break;
                 }
-                // case Symbol::down:
-                // {
-                //     terminal.SetLine(session.NextCmd());
-                //     break;
-                // }
-                // case Symbol::up:
-                // {
-                //     auto line = terminal.GetLine();
-                //     terminal.SetLine(session.PreviousCmd(line));
-                //     break;
-                // }
-                // case Symbol::tab:
-                // {
-                //     auto line = terminal.GetLine();
-                //     auto completions = session.GetCompletions(line);
-
-                //     if (completions.empty())
-                //         break;
-                //     if (completions.size() == 1)
-                //     {
-                //         terminal.SetLine(completions[0]+' ');
-                //         break;
-                //     }
-
-                //     auto commonPrefix = CommonPrefix(completions);
-                //     if (commonPrefix.size() > line.size())
-                //     {
-                //         terminal.SetLine(commonPrefix);
-                //         break;
-                //     }
-                //     session.OutStream() << '\n';
-                //     std::string items;
-                //     std::for_each( completions.begin(), completions.end(), [&items](auto& cmd){ items += '\t' + cmd; } );
-                //     session.OutStream() << items << '\n';
-                //     session.Prompt();
-                //     terminal.ResetCursor();
-                //     terminal.SetLine( line );
-                //     break;
-                // }
+                case detail::Symbol::down:
+                {
+                    terminal.SetLine(m_oHistory.Next());
+                    break;
+                }
+                case detail::Symbol::up:
+                {
+                    // auto line = terminal.GetLine();
+                    terminal.SetLine(m_oHistory.Prev());
+                    break;
+                }
             }
 
         }
@@ -133,6 +115,7 @@ namespace cli
         Lexer lex;
         detail::Terminal terminal;
         bool m_bExit;
+        History m_oHistory;
     };
 }
 

@@ -29,7 +29,6 @@ namespace cli
             Terminal(Lexer& lex, std::ostream &_out, CmdList& vCmds) : m_vCmds(vCmds), out(_out), m_oLex(lex)
             {
                 // m_strCurrentLine += "> ";
-                out << "> " << std::flush;
                 m_lMinPosition = 0;
                 m_lPosition = m_lMinPosition;
 
@@ -84,12 +83,12 @@ namespace cli
                         out << std::string(m_strCurrentLine.size() - m_lPosition + 1, '\b') << std::flush;
                         break;
                     }
-                    // case KeyType::up:
-                    //     return std::make_pair(Symbol::up, std::string{});
-                    //     break;
-                    // case KeyType::down:
-                    //     return std::make_pair(Symbol::down, std::string{});
-                    //     break;
+                    case KeyType::up:
+                        return std::make_pair(Symbol::up, std::string{});
+                        break;
+                    case KeyType::down:
+                        return std::make_pair(Symbol::down, std::string{});
+                        break;
                     case KeyType::left:
                         if (m_lPosition > m_lMinPosition)
                         {

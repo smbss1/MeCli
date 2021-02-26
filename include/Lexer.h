@@ -48,6 +48,7 @@ class Lexer
 {
 public:
     std::vector<Token> oTokenList;
+    std::vector<std::string> m_strList; // List of token string value
     std::vector<Token>::iterator oTokenIterator;
     std::vector<Token>::iterator oStoreTokenIterator;
     Token oEofToken;

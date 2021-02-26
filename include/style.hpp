@@ -1,10 +1,10 @@
 
-#ifndef CLI_STYLE_HPP_
-#define CLI_STYLE_HPP_
+#ifndef MECLI_STYLE_HPP_
+#define MECLI_STYLE_HPP_
 
 #include <iostream>
 
-namespace cli::style
+namespace mecli::style
 {
     static int id = 0;
     static int bg = 0;

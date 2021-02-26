@@ -1,5 +1,5 @@
-#ifndef CLI_LOOPSCHEDULER_HPP_
-#define CLI_LOOPSCHEDULER_HPP_
+#ifndef MECLI_LOOPSCHEDULER_HPP_
+#define MECLI_LOOPSCHEDULER_HPP_
 
 #include <queue>
 #include <thread>
@@ -7,7 +7,7 @@
 #include <condition_variable>
 #include "IScheduler.hpp"
 
-namespace cli
+namespace mecli
 {
 
 /**

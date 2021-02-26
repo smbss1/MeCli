@@ -1,34 +1,48 @@
-#ifndef CLI_APP_HPP_
-#define CLI_APP_HPP_
+#ifndef MECLI_APP_HPP_
+#define MECLI_APP_HPP_
 
+#include <functional>
 #include "Common.hpp"
 #include "LoopScheduler.hpp"
 #include "LinuxKeyboard.hpp"
 #include "InputDevice.hpp"
 #include "Terminal.hpp"
 #include "History.hpp"
+#include "Trie.hpp"
 
-namespace cli
+namespace mecli
 {
     class App
     {
     public:
-        App() : m_oKeyboard(m_oScheduler), terminal(lex, std::cout, m_vCmds)
+        App() : m_oKeyboard(m_oScheduler), terminal(std::cout, m_vSyntaxes)
         {
-            lex.m_bEnableError = false;
-            lex.Define("WS", "[ \t\r\b]+");
-            lex.Define("NewLine", "\n");
-            lex.Define("Number", "[0-9]+");
-            lex.Define("Identifier", "[A-Za-z_]+[0-9]*");
-            lex.Define("Eof", "\\0");
+            m_oLex.m_bEnableError = false;
+            m_oLex.Define("WS", "[ \t\r\b]+", true);
+            m_oLex.Define("NewLine", "\n", true);
+            m_oLex.Define("Number", "[0-9]+");
+            m_oLex.Define("Command", "/[A-Za-z_]+");
+            m_oLex.Define("Identifier", "[A-Za-z_]+");
+            m_oLex.Define("Eof", "\\0", true);
 
             m_oKeyboard.Register([this](auto key)
             {
-                this->Keypressed(key);
+                this->OnKeyPressed(key);
             });
 
             m_bExit = false;
-            AddCmd("exit", [this]() { Exit(); });
+            AddCmd("exit", [this](ArgsList&) { Exit(); });
+            AddCmd("history", [this](ArgsList&) { m_oHistory.Dump(std::cout); });
+            AddCmd("clear", [this](ArgsList& vArgs)
+            {
+                if (vArgs[1] == "history")
+                    m_oHistory.Clear();
+            });
+
+            AddCmd("help", [this](ArgsList& vArgs)
+            {
+                PrintHelp();
+            });
         }
 
         ~App() { }
@@ -47,12 +61,32 @@ namespace cli
             m_oScheduler.Stop();
         }
 
-        void AddCmd(const std::string& strCmd, CmdFunc oFunc)
+        void AddCmd(const std::string& strCmd, const std::string& strHelp, CmdFunc oFunc)
         {
-            m_vCmds.push_back(Command(strCmd, oFunc));
+            m_vCmds.push_back(Command("/" + strCmd, strHelp, oFunc));
+            AddSyntax("/" + strCmd, [](const std::string& strText)
+            {
+                std::cout << style::bold << style::blue << strText << style::reset;
+            });
         }
 
-        void Keypressed(std::pair<detail::KeyType, char> k)
+        void SetOnLineListener(OnLineFunc oFunc)
+        {
+            m_oOnLineListener = oFunc;
+        }
+
+        void AddCmd(const std::string& strCmd, CmdFunc oFunc)
+        {
+            AddCmd(strCmd, "", oFunc);
+        }
+
+        void AddSyntax(const std::string& strSyntax, SyntaxFunc oFunc)
+        {
+            m_vSyntaxes.emplace(strSyntax, oFunc);
+            m_oTrie.Insert(strSyntax);
+        }
+
+        void OnKeyPressed(std::pair<detail::KeyType, char> k)
         {
             const std::pair<detail::Symbol, std::string> s = terminal.Keypressed(k);
             NewCommand(s);
@@ -64,6 +98,16 @@ namespace cli
             {
                 std::cout << style::bold << style::white;
                 std::cout << "> " << style::reset << std::flush;
+            }
+        }
+
+        void PrintHelp()
+        {
+            std::cout << "Commands available: " << std::endl;
+            for (auto& cmd : m_vCmds)
+            {
+                std::cout << "  - " << cmd.GetName() << std::endl;
+                std::cout << "            " << cmd.GetDesc() << std::endl;
             }
         }
 
@@ -80,15 +124,22 @@ namespace cli
                 }
                 case detail::Symbol::command:
                 {
+                    // Parse the line
+                    m_oLex.Process(s.second);
+                    m_oLex.Begin();
+                    bool bFound = false;
                     for (int i = 0; i < m_vCmds.size(); ++i)
                     {
                         // If found the correct command execute it function
-                        if (m_vCmds[i].GetName() == lex[0].GetText())
+                        if (m_vCmds[i].GetName() == m_oLex[0].GetText())
                         {
-                            m_vCmds[i].Exec();
+                            bFound = true;
+                            m_vCmds[i].Exec(m_oLex.m_strList);
                             break;
                         }
                     }
+                    if (!bFound && m_oOnLineListener)
+                        m_oOnLineListener(s.second);
                     if (!s.second.empty())
                         m_oHistory.Add(s.second);
                     Prompt();
@@ -104,18 +155,41 @@ namespace cli
                     terminal.SetLine(m_oHistory.Prev());
                     break;
                 }
+                case detail::Symbol::tab:
+                {
+                    auto line = terminal.GetLine();
+                    m_oLex.Process(line);
+                    m_oTrie.IsSpace(m_oLex[m_oLex.Size() - 1].GetText());
+                    std::vector<std::string> vCompletions = m_oTrie.Search(m_oLex[m_oLex.Size() - 1].GetText());
+                    if (!vCompletions.empty())
+                    {
+                        std::cout << std::endl;
+                        std::string items;
+                        std::for_each(vCompletions.begin(), vCompletions.end(), [&items](auto& cmd)
+                        {
+                            items += "    " + cmd;
+                        });
+                        std::cout << items << std::endl;
+                        Prompt();
+                        terminal.ResetCursor();
+                        terminal.SetLine( line );
+                    }
+                    break;
+                }
             }
-
         }
 
     private:
-        cli::LoopScheduler m_oScheduler;
-        cli::detail::LinuxKeyboard m_oKeyboard;
+        LoopScheduler m_oScheduler;
+        detail::LinuxKeyboard m_oKeyboard;
         CmdList m_vCmds;
-        Lexer lex;
+        SyntaxList m_vSyntaxes;
+        Lexer m_oLex;
         detail::Terminal terminal;
         bool m_bExit;
         History m_oHistory;
+        Trie m_oTrie;
+        OnLineFunc m_oOnLineListener;
     };
 }
 

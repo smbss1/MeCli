@@ -1,5 +1,5 @@
-#ifndef CLI_DETAIL_LINUXKEYBOARD_HPP_
-#define CLI_DETAIL_LINUXKEYBOARD_HPP_
+#ifndef MECLI_DETAIL_LINUXKEYBOARD_HPP_
+#define MECLI_DETAIL_LINUXKEYBOARD_HPP_
 
 #include <thread>
 #include <memory>
@@ -13,7 +13,7 @@
 #include "InputDevice.hpp"
 #include "style.hpp"
 
-namespace cli
+namespace mecli
 {
     namespace detail
     {

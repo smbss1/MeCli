@@ -1,43 +1,42 @@
-#ifndef CLI_DETAIL_INPUTDEVICE_HPP_
-#define CLI_DETAIL_INPUTDEVICE_HPP_
+#ifndef MECLI_DETAIL_INPUTDEVICE_HPP_
+#define MECLI_DETAIL_INPUTDEVICE_HPP_
 
 #include <functional>
 #include <string>
 
 #include "IScheduler.hpp"
 
-namespace cli
+namespace mecli
 {
-namespace detail
-{
-
-enum class KeyType { ascii, up, down, left, right, backspace, canc, home, end, ret, eof, ignored };
-
-class InputDevice
-{
-public:
-    using Handler = std::function< void( std::pair<KeyType,char> ) >;
-
-    InputDevice(IScheduler& _scheduler) : scheduler(_scheduler) {}
-    virtual ~InputDevice() = default;
-
-    template <typename H>
-    void Register(H&& h) { handler = std::forward<H>(h); }
-
-protected:
-
-    void Notify(std::pair<KeyType,char> k)
+    namespace detail
     {
-        scheduler.Post([this,k](){ if (handler) handler(k); });
-    }
+        enum class KeyType { ascii, up, down, left, right, backspace, canc, home, end, ret, eof, ignored };
 
-private:
+        class InputDevice
+        {
+        public:
+            using Handler = std::function< void( std::pair<KeyType,char> ) >;
 
-    IScheduler& scheduler;
-    Handler handler;
-};
+            InputDevice(IScheduler& _scheduler) : scheduler(_scheduler) {}
+            virtual ~InputDevice() = default;
 
-} // namespace detail
-} // namespace cli
+            template <typename H>
+            void Register(H&& h) { handler = std::forward<H>(h); }
+
+        protected:
+
+            void Notify(std::pair<KeyType,char> k)
+            {
+                scheduler.Post([this,k](){ if (handler) handler(k); });
+            }
+
+        private:
+
+            IScheduler& scheduler;
+            Handler handler;
+        };
+
+    } // namespace detail
+} // namespace mecli
 
 #endif // CLI_DETAIL_INPUTDEVICE_H_

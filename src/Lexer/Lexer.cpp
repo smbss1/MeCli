@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <regex>
 #include "Lexer.h"
-#include "re.h"
 
 Lexer::Lexer()
 {
@@ -53,6 +52,7 @@ bool Lexer::Process(const std::string& strText)
 {
     m_strText    = strText;
     oTokenList.clear();
+    m_strList.clear();
 
     if (strText.empty())
         return false;
@@ -106,6 +106,7 @@ bool Lexer::Process(const std::string& strText)
 						newStr += m_strText[i];
 				}
 				oTokenList.emplace_back(define.first, newStr, newStr.size(), m_iLines);
+                m_strList.emplace_back(newStr);
 				m_strText.erase(0, i + 1);
 				break;
 			}
@@ -113,21 +114,20 @@ bool Lexer::Process(const std::string& strText)
 
         for (auto& define : m_oAllDefines)
         {
-            // std::smatch match;
-            // std::regex reg(define.second);
-            // if (std::regex_search(m_strText, match, reg))
-            // {
-
-            // }
-            int index = re_match(define.second.c_str(), m_strText.c_str(), &iLen);
-
-            if (index == 0)
+            std::smatch match;
+            std::regex reg(define.second);
+            if (std::regex_search(m_strText, match, reg))
             {
-                if (maxLen < iLen)
+                int index = match.position();
+                iLen = match.length();
+                if (index == 0)
                 {
-                    defineTarget = define;
-                    maxLen = iLen;
-                    pText = m_strText.substr(index, maxLen);
+                    if (maxLen < iLen)
+                    {
+                        defineTarget = define;
+                        maxLen = iLen;
+                        pText = m_strText.substr(index, maxLen);
+                    }
                 }
             }
         }
@@ -165,6 +165,7 @@ bool Lexer::Process(const std::string& strText)
 						newStr += m_strText[i];
 				}
                 oTokenList.emplace_back(defineTarget.first, newStr, i, m_iLines);
+                m_strList.emplace_back(newStr);
 			}
             m_strText.erase(0, maxLen);
             bFound = true;
@@ -174,9 +175,11 @@ bool Lexer::Process(const std::string& strText)
         }
 
         if (!bFound) {
-            if (!m_bEnableError)
-                oTokenList.emplace_back(StringID(0), m_strText.substr(0, 1), (std::size_t) 1, (std::size_t) m_iLines);
-            else
+            if (!m_bEnableError) {
+                std::string strSub = m_strText.substr(0, 1);
+                oTokenList.emplace_back(StringID(0), strSub, (std::size_t) 1, (std::size_t) m_iLines);
+                m_strList.emplace_back(strSub);
+            } else
                 oTokenList.emplace_back(StringID(84), "Unexpected Character.", (std::size_t) 21, (std::size_t) m_iLines);
             m_strText.erase(0, 1);
         }

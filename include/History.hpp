@@ -8,78 +8,88 @@
 #include <iostream>
 #include <fstream>
 
-class History
+namespace mecli
 {
-public:
-    History()
+    class History
     {
-        Load("history.txt");
-        Dump(std::cout);
-        m_lCurrentLine = m_vHistory.size();
-        m_lMaxSize = 2;
-    }
-
-    ~History()
-    {
-        Save("history.txt");
-    }
-
-    void Add(const std::string& strLine)
-    {
-        if (m_vHistory.size() > m_lMaxSize)
-            m_vHistory.erase(m_vHistory.begin());
-        if (m_vHistory.empty() || m_vHistory[m_vHistory.size() - 1] != strLine) // insert an element not equal to last one
-            m_vHistory.push_back(strLine);
-    }
-
-    void Dump(std::ostream& out)
-    {
-        for (auto& cmd : m_vHistory)
-            out << cmd << '\n';
-        out << '\n' << std::flush;
-    }
-
-    const std::string& Next()
-    {
-        if (m_lCurrentLine < m_vHistory.size() - 1)
-            return m_vHistory[++m_lCurrentLine];
-        return m_vHistory[m_lCurrentLine];
-    }
-
-    const std::string& Prev()
-    {
-        if (m_lCurrentLine > 0)
-            return m_vHistory[--m_lCurrentLine];
-        return m_vHistory[m_lCurrentLine];
-    }
-
-private:
-    void Load(const std::string& strFilename)
-    {
-        std::ifstream in(strFilename);
-        if (in)
+    public:
+        History()
         {
-            std::string strLine;
-            m_vHistory.clear();
-            while (std::getline(in, strLine))
+            Load("history.txt");
+            m_lCurrentLine = m_vHistory.size();
+            m_lMaxSize = 200;
+        }
+
+        ~History()
+        {
+            Save("history.txt");
+        }
+
+        void Add(const std::string& strLine)
+        {
+            if (m_vHistory.size() > m_lMaxSize)
+                m_vHistory.erase(m_vHistory.begin());
+            if (m_vHistory.empty() || m_vHistory[m_vHistory.size() - 1] != strLine) // insert an element not equal to last one
                 m_vHistory.push_back(strLine);
         }
-    }
 
-    void Save(const std::string& strFilename)
-    {
-        std::ofstream out(strFilename);
-        if (out)
+        void Clear()
+        {
+            std::cout << "Clear" << std::endl;
+            m_vHistory.clear();
+        }
+
+        void Dump(std::ostream& out)
         {
             for (auto& cmd : m_vHistory)
                 out << cmd << '\n';
-            out << std::flush;
+            out << '\n' << std::flush;
         }
-    }
-private:
-    std::vector<std::string> m_vHistory;
-    std::size_t m_lCurrentLine;
-    std::size_t m_lMaxSize;
-};
+
+        const std::string& Next()
+        {
+            if (m_lCurrentLine < m_vHistory.size() - 1)
+                return m_vHistory[++m_lCurrentLine];
+            return m_vHistory[m_lCurrentLine];
+        }
+
+        const std::string& Prev()
+        {
+            if (m_lCurrentLine > 0)
+                return m_vHistory[--m_lCurrentLine];
+            return m_vHistory[m_lCurrentLine];
+        }
+
+    private:
+        void Load(const std::string& strFilename)
+        {
+            std::ifstream in(strFilename);
+            if (in)
+            {
+                std::string strLine;
+                m_vHistory.clear();
+                while (std::getline(in, strLine))
+                    m_vHistory.push_back(strLine);
+            }
+        }
+
+        void Save(const std::string& strFilename)
+        {
+            std::ofstream out(strFilename, std::ofstream::out | std::ofstream::trunc);
+            if (out)
+            {
+                if (m_vHistory.empty())
+                    out.clear();
+                for (auto& cmd : m_vHistory)
+                    out << cmd << '\n';
+                out << std::flush;
+            }
+        }
+    private:
+        std::vector<std::string> m_vHistory;
+        std::size_t m_lCurrentLine;
+        std::size_t m_lMaxSize;
+    };
+} // namespace mecli
 
 #endif

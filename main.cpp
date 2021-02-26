@@ -3,9 +3,9 @@
 
 int main()
 {
-    cli::App app;
-    app.AddCmd("display", []() { std::cout << "display command" << std::endl; });
-    app.AddCmd("clock", []() { std::cout << "clock command" << std::endl; });
+    mecli::App app;
+    app.AddCmd("display", "Display something", [](const std::vector<std::string>&) { std::cout << "display command" << std::endl; });
+    app.AddCmd("clock", "Clock Something", [](const std::vector<std::string>&) { std::cout << "clock command" << std::endl; });
     app.Run();
     return 0;
 }

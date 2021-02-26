@@ -90,7 +90,8 @@ namespace mecli
                     // If found a command so highlight it
                     if (it != m_vSyntaxes.end())
                     {
-                        out << style::bold << style::blue << oToken.GetText() << style::reset << std::flush;
+                        it->second(oToken.GetText());
+                        out << std::flush;
                         continue;
                     }
                     out << style::white << oToken.GetText() << style::reset << std::flush;

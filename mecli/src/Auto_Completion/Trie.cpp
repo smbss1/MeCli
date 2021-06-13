@@ -65,7 +65,6 @@ std::vector<std::string> Trie::PrintTree(Node* root, std::string str) //overload
 			{
 				if (getSpace() == true)
 					std::cout << m_strNoPrefix;
-				// std::cout << str << std::endl;
 				vResult.push_back(str);
 			}
 			PrintTree(adv, str);
